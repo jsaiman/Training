@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halvern fund performance - validated dashboard</title>
+<style>
+:root{color-scheme:light;--bg:#f6f6f4;--surface:#fcfcfb;--line:#e3e2dd;--ink:#0b0b0b;--ink2:#52514e;--ink3:#7a7974;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--bar:#2a78d6;--block:#b3261e;--blockbg:#fbeceb;--warn:#8a5a00;--warnbg:#fdf3dc;--info:#3f4a5a;--infobg:#eceef2}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121211;--surface:#1a1a19;--line:#33322f;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#9a998f;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--bar:#3987e5;--block:#f0847c;--blockbg:#3a1d1b;--warn:#e8b84a;--warnbg:#33290f;--info:#aab4c4;--infobg:#25282d}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){color-scheme:dark;--bg:#121211;--surface:#1a1a19;--line:#33322f;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#9a998f;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--bar:#3987e5;--block:#f0847c;--blockbg:#3a1d1b;--warn:#e8b84a;--warnbg:#33290f;--info:#aab4c4;--infobg:#25282d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:22px;margin:0}h2{font-size:16px;margin:0 0 4px}.sub{color:var(--ink2);margin:2px 0 0}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+button,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--ink);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:16px}
+.banner{border:1px solid var(--block);background:var(--blockbg);border-radius:10px;padding:14px 16px;margin-top:16px}
+.banner b{color:var(--block)}.banner ul{margin:6px 0 0;padding-left:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .l{color:var(--ink2);font-size:12px}.kpi .v{font-size:28px;font-weight:600;margin:2px 0}.kpi .n{color:var(--ink3);font-size:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:16px;margin-top:16px}
+.grid2 .card{margin-top:0}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink2);font-weight:600;white-space:nowrap}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+.badge{display:inline-block;border-radius:4px;padding:0 6px;font-size:12px;font-weight:600;white-space:nowrap}
+.Blocking{color:var(--block);background:var(--blockbg)}.Warning{color:var(--warn);background:var(--warnbg)}.Info{color:var(--info);background:var(--infobg)}
+.excl td{color:var(--ink3)}.excl td:first-child{text-decoration:line-through}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0;color:var(--ink2);font-size:12px}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+svg text{fill:var(--ink2);font-size:11px}svg .ink{fill:var(--ink)}svg .grid{stroke:var(--line)}
+#tip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--ink3);border-radius:6px;padding:6px 8px;font-size:12px;display:none;z-index:9;max-width:260px}
+details summary{cursor:pointer;color:var(--ink2);margin-top:8px}.note{color:var(--ink3);font-size:12px;margin:6px 0 0}
+code{font-size:12px}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div><h1>Halvern fund performance</h1>
+<p class="sub" id="meta"></p></div><button id="theme" type="button">Switch theme</button></div>
+<div id="banner"></div>
+<div class="kpis" id="kpis"></div>
+<div class="card"><h2>Fund summary</h2><p class="sub">Validated figures use only rows that pass every blocking rule. Workbook figures are the Fund Summary formulas recomputed over all rows, as Excel would.</p><div class="tw" id="funds"></div></div>
+<div class="grid2">
+<div class="card"><h2>MOIC by company</h2><p class="sub">Validated rows only. (Value + Realised) / Invested.</p><div class="legend" id="fundlegend"></div><div id="moic"></div><p class="note" id="moicnote"></p></div>
+<div class="card"><h2>Reported marks by fund (£m)</h2><p class="sub">Sum of Quarterly Marks, validated companies. A quarter is plotted only if every company expected to have a mark has a clean one; otherwise it is left as a gap.</p><div class="legend" id="fundlegend2"></div><div id="trend"></div>
+<details><summary>Show as table</summary><div class="tw" id="trendtable"></div></details><p class="note">Totals rise partly because new companies enter during the period.</p></div>
+<div class="card"><h2>Invested capital by sector (£m)</h2><p class="sub">Validated rows only.</p><div id="sector"></div></div>
+<div class="card"><h2>Invested capital by geography (£m)</h2><p class="sub">Validated rows only.</p><div id="geo"></div></div>
+</div>
+<div class="card"><h2>Exceptions found</h2><p class="sub">Every issue found, with the cell, what was found and what was done about it. Nothing has been corrected, filled or interpolated.</p>
+<div class="chips" id="sevchips"></div><div class="chips" id="rulechips"></div><div class="tw" id="issues"></div></div>
+<div class="card"><h2>Companies</h2><p class="sub">Struck-through rows are excluded from headline figures. Flags show which rules the row triggered.</p><div class="tw" id="companies"></div></div>
+<div class="card"><h2>Rules applied</h2><p class="sub">Blocking: row excluded from headline figures. Warning: shown and flagged. Info: for information.</p><div class="tw" id="rules"></div></div>
+</main>
+<div id="tip"></div>
+<script>
+const D=__DATA__;
+const $=id=>document.getElementById(id);
+const f1=v=>v==null?"n/a":v.toLocaleString("en-GB",{minimumFractionDigits:1,maximumFractionDigits:1});
+const fx=v=>v==null?"n/a":v.toFixed(2)+"x";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ICON={Blocking:"■ ",Warning:"▲ ",Info:"● "};
+const badge=s=>`<span class="badge ${s}">${ICON[s]}${s}</span>`;
+const FC={};D.funds.forEach((f,i)=>FC[f.name]="var(--s"+(i+1)+")");
+const NS="http://www.w3.org/2000/svg";
+const tip=$("tip");
+function showTip(e,html){tip.innerHTML=html;tip.style.display="block";tip.style.left=Math.min(e.clientX+12,innerWidth-270)+"px";tip.style.top=(e.clientY+12)+"px"}
+function hideTip(){tip.style.display="none"}
+function svg(w,h,inner){return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" style="display:block">${inner}</svg>`}
+function bindTips(root){root.querySelectorAll("[data-tip]").forEach(el=>{el.addEventListener("mousemove",e=>showTip(e,el.dataset.tip));el.addEventListener("mouseleave",hideTip)})}
+
+$("theme").onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=dark?"light":"dark"};
+
+$("meta").textContent=`Source: ${D.source}. Processed ${D.generated}. ${D.rows_valid} of ${D.rows_total} Portfolio rows pass validation.`;
+
+// banner
+const blocked=D.issues.filter(i=>i.sev==="Blocking");
+const byEntity={};blocked.forEach(i=>{(byEntity[i.entity]=byEntity[i.entity]||[]).push(i)});
+$("banner").innerHTML=`<div class="banner"><b>■ ${D.excluded.length} of ${D.rows_total} companies are excluded from every headline figure below.</b> They broke a blocking rule and I have not guessed a correction.<ul>${
+Object.entries(byEntity).map(([k,v])=>`<li><b>${esc(k)}</b> (${esc(v[0].sheet)} ${esc(v[0].cell)}, rule ${v[0].rule}): ${esc(v[0].found)}</li>`).join("")}</ul>
+<p class="note" style="color:var(--ink2)">Also found: ${D.sev.Warning} warnings and ${D.sev.Info} information items. See Exceptions below. Headline figures should not be quoted until the blocking items are resolved.</p></div>`;
+
+// KPIs
+const H=D.headline,W=D.workbook_all;
+const kp=(l,v,n)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
+$("kpis").innerHTML=kp("Invested capital (£m)",f1(H.inv),`Workbook formulas, all rows: ${f1(W.inv)}`)+
+kp("Total value (£m)",f1(H.tv),`Workbook formulas, all rows: ${f1(W.tv)}`)+
+kp("Gross MOIC",fx(H.moic),`Workbook formulas, all rows: ${fx(W.moic)}`)+
+kp("DPI",fx(H.dpi),`Workbook formulas, all rows: ${fx(W.dpi)}`)+
+kp("Companies counted",`${D.rows_valid} / ${D.rows_total}`,`${D.excluded.length} excluded`);
+
+// funds table
+$("funds").innerHTML=`<table><thead><tr><th>Fund</th><th class="num">Vintage</th><th class="num">Rows used</th><th class="num">Invested £m</th><th class="num">Value £m</th><th class="num">Gross MOIC</th><th class="num">DPI</th><th class="num">Workbook MOIC (all rows)</th><th class="num">Net IRR % (reported, unverified)</th></tr></thead><tbody>${
+D.funds.map(f=>{const v=f.validated;return `<tr><td>${esc(f.name)}</td><td class="num">${f.vintage}</td><td class="num">${f.rows_valid} / ${f.rows_total}</td><td class="num">${f1(v.inv)}</td><td class="num">${f1(v.tv)}</td><td class="num">${fx(v.moic)}</td><td class="num">${fx(v.dpi)}</td><td class="num">${fx(f.workbook.moic)}</td><td class="num">${f.irr==null?"n/a":f.irr.toFixed(1)}</td></tr>`}).join("")}</tbody></table>
+${D.issues.some(i=>i.rule==="F4")?`<p class="note">Workbook TVPI is the same formula as Gross MOIC (rule F4), so no separate TVPI is shown. It is a gross figure, not net of fees and carry.</p>`:""}`;
+const lg=D.funds.map(f=>`<span><i style="background:${FC[f.name]}"></i>${esc(f.name)}</span>`).join("");
+$("fundlegend").innerHTML=lg;$("fundlegend2").innerHTML=lg;
+
+// MOIC bars
+(function(){const rows=D.companies.filter(c=>!c.excluded).sort((a,b)=>b.moic-a.moic);
+const w=560,lh=22,lw=150,h=rows.length*lh+24,mx=Math.max(...rows.map(r=>r.moic))*1.1;
+const sx=v=>lw+(w-lw-50)*v/mx;
+let s="";[1,2,3,4].filter(t=>t<mx).forEach(t=>{s+=`<line class="grid" x1="${sx(t)}" x2="${sx(t)}" y1="0" y2="${h-18}"/><text x="${sx(t)}" y="${h-4}" text-anchor="middle">${t}x</text>`});
+rows.forEach((r,i)=>{const y=i*lh+3;s+=`<text class="ink" x="${lw-8}" y="${y+12}" text-anchor="end">${esc(r.company)}</text><rect data-tip="<b>${esc(r.company)}</b><br>${esc(r.fund)}<br>MOIC ${fx(r.moic)}<br>Invested £${f1(r.inv)}m, valued £${f1(r.val)}m, realised £${f1(r.real)}m" x="${lw}" y="${y}" width="${sx(r.moic)-lw}" height="15" rx="3" fill="${FC[r.fund]}"/><text x="${sx(r.moic)+5}" y="${y+12}">${fx(r.moic)}</text>`});
+$("moic").innerHTML=svg(w,h,s);bindTips($("moic"));
+$("moicnote").textContent="Not shown (excluded): "+D.excluded.map(e=>e.company).join(", ")+".";})();
+
+// trend
+(function(){const w=560,h=260,l=44,r=12,t=10,b=28,Q=D.quarters;
+const all=D.trend.flatMap(x=>x.pts.map(p=>p.v)).filter(v=>v!=null),mx=Math.ceil(Math.max(...all)/100)*100;
+const sx=i=>l+(w-l-r)*i/(Q.length-1),sy=v=>t+(h-t-b)*(1-v/mx);let s="";
+for(let v=0;v<=mx;v+=mx/4)s+=`<line class="grid" x1="${l}" x2="${w-r}" y1="${sy(v)}" y2="${sy(v)}"/><text x="${l-6}" y="${sy(v)+4}" text-anchor="end">${v}</text>`;
+Q.forEach((q,i)=>{if(i%2===0)s+=`<text x="${sx(i)}" y="${h-8}" text-anchor="middle">${q.replace(" 20","’")}</text>`});
+D.trend.forEach(tr=>{let d="",pen=false;tr.pts.forEach((p,i)=>{if(p.v==null){pen=false;return}d+=(pen?"L":"M")+sx(i)+","+sy(p.v);pen=true});
+s+=`<path d="${d}" fill="none" stroke="${FC[tr.fund]}" stroke-width="2"/>`;
+tr.pts.forEach((p,i)=>{if(p.v!=null)s+=`<circle data-tip="<b>${esc(tr.fund)}</b><br>${p.q}: £${f1(p.v)}m<br>${p.n} companies" cx="${sx(i)}" cy="${sy(p.v)}" r="4" fill="${FC[tr.fund]}" stroke="var(--surface)" stroke-width="2"/>`;else if(p.expected)s+=`<text x="${sx(i)}" y="${h-b+10}" text-anchor="middle" style="fill:var(--warn)">▲</text>`})});
+$("trend").innerHTML=svg(w,h,s);bindTips($("trend"));
+$("trendtable").innerHTML=`<table><thead><tr><th>Quarter</th>${D.trend.map(x=>`<th class="num">${esc(x.fund)}</th>`).join("")}</tr></thead><tbody>${Q.map((q,i)=>`<tr><td>${q}</td>${D.trend.map(x=>{const p=x.pts[i];return `<td class="num">${p.v!=null?f1(p.v):(p.expected?`${badge("Warning")} incomplete (${p.n}/${p.expected})`:"-")}</td>`}).join("")}</tr>`).join("")}</tbody></table>`;
+const gaps=D.trend.flatMap(x=>x.pts.filter(p=>p.v==null&&p.expected).map(p=>`${x.fund} ${p.q} (${p.n} of ${p.expected} marks usable)`));
+if(gaps.length)$("trend").insertAdjacentHTML("beforeend",`<p class="note" style="color:var(--warn)">▲ Left as gaps: ${gaps.map(esc).join("; ")}.</p>`)})();
+
+// horizontal single-series bars
+function hbars(id,data){const w=560,lh=24,lw=140,h=data.length*lh+4,mx=Math.max(...data.map(d=>d.v))*1.1;let s="";
+data.forEach((d,i)=>{const y=i*lh+3,bw=(w-lw-50)*d.v/mx;s+=`<text class="ink" x="${lw-8}" y="${y+12}" text-anchor="end">${esc(d.k)}</text><rect data-tip="<b>${esc(d.k)}</b><br>£${f1(d.v)}m invested" x="${lw}" y="${y}" width="${bw}" height="15" rx="3" fill="var(--bar)"/><text x="${lw+bw+5}" y="${y+12}">${f1(d.v)}</text>`});
+$(id).innerHTML=svg(w,h,s);bindTips($(id))}
+hbars("sector",D.sector);hbars("geo",D.geo);
+
+// issues
+let sevF=new Set(["Blocking","Warning","Info"]),ruleF=null;
+function chip(label,on,fn){const b=document.createElement("button");b.type="button";b.textContent=label;b.setAttribute("aria-pressed",on);b.onclick=fn;return b}
+function drawIssues(){
+const sc=$("sevchips");sc.innerHTML="";["Blocking","Warning","Info"].forEach(s=>{const n=D.issues.filter(i=>i.sev===s).length;sc.appendChild(chip(`${ICON[s]}${s} (${n})`,sevF.has(s),()=>{sevF.has(s)?sevF.delete(s):sevF.add(s);drawIssues()}))});
+const rc=$("rulechips");rc.innerHTML="";rc.appendChild(chip("All rules",ruleF===null,()=>{ruleF=null;drawIssues()}));
+[...new Set(D.issues.map(i=>i.rule))].forEach(r=>rc.appendChild(chip(`${r} (${D.issues.filter(i=>i.rule===r).length})`,ruleF===r,()=>{ruleF=r;drawIssues()})));
+const rows=D.issues.filter(i=>sevF.has(i.sev)&&(ruleF===null||i.rule===ruleF));
+$("issues").innerHTML=`<table><thead><tr><th>Severity</th><th>Rule</th><th>Where</th><th>Company</th><th>What I found</th><th>What I did</th></tr></thead><tbody>${rows.map(i=>`<tr><td>${badge(i.sev)}</td><td>${i.rule}</td><td>${esc(i.sheet)} ${esc(i.cell)}</td><td>${esc(i.entity)}</td><td>${esc(i.found)}</td><td>${esc(i.treatment)}</td></tr>`).join("")}</tbody></table>`}
+drawIssues();
+
+// companies
+$("companies").innerHTML=`<table><thead><tr><th>Company</th><th>Fund</th><th>Sector</th><th>Geography</th><th>Status</th><th>Entry</th><th class="num">Invested</th><th class="num">Valuation</th><th class="num">Realised</th><th class="num">MOIC</th><th class="num">Latest mark</th><th>Flags</th></tr></thead><tbody>${D.companies.map(c=>`<tr class="${c.excluded?"excl":""}"><td>${esc(c.company)}</td><td>${esc(c.fund)}</td><td>${esc(c.sector)}</td><td>${esc(c.geo)}</td><td>${esc(c.status)}</td><td>${c.entry||"invalid"}</td><td class="num">${f1(c.inv)}</td><td class="num">${c.val==null?"blank":f1(c.val)}</td><td class="num">${f1(c.real)}</td><td class="num">${c.excluded?"excluded":fx(c.moic)}</td><td class="num">${f1(c.last_mark)}</td><td>${c.rules.length?c.rules.map(r=>`<span class="badge ${c.block.includes(r)?"Blocking":"Warning"}">${r}</span>`).join(" "):""}</td></tr>`).join("")}</tbody></table>`;
+
+// rules
+$("rules").innerHTML=`<table><thead><tr><th>ID</th><th>Where</th><th>Rule</th><th>If it fails</th></tr></thead><tbody>${D.rules.map(r=>`<tr><td>${r.id}</td><td>${esc(r.where)}</td><td>${esc(r.rule)}</td><td>${badge(r.sev)}</td></tr>`).join("")}</tbody></table>`;
+</script>
+</body>
+</html>
