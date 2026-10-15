@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate a Halvern workbook against config.py and build the dashboard.
 
-Usage: python3 process.py <config.py> <workbook.xlsx> <template.html> <output.html>
+Usage: python3 scripts/process.py scripts/config.py <workbook.xlsx> <template.html> <output.html>
 
 All column mappings, thresholds and rules come from config.py (copied from SKILL.md).
 Nothing is corrected, filled or interpolated. Anything outside the rules is recorded as an issue.
