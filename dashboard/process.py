@@ -34,7 +34,7 @@ RULES = [
     ("Q3", "Marks B:O gaps", "Blank allowed only before the first mark. A later blank is a gap and is not interpolated.", "Warning"),
     ("Q4", "Marks first mark", "First mark quarter should equal entry quarter (or Q1 2023 if entry was earlier).", "Warning"),
     ("Q5", "Marks QoQ", "Move of more than 30% between consecutive valid marks is flagged.", "Warning"),
-    ("Q6", "Marks vs Portfolio", "Latest mark must equal Current Valuation (Active) or Realised Proceeds (Exited), tolerance 0.05.", "Warning"),
+    ("Q6", "Marks vs Portfolio", "Latest mark must equal Current Valuation (Active) or Realised Proceeds (Exited), tolerance 0.05. Portfolio tab confirmed as the correct source, so a break does not change any headline figure.", "Warning"),
     ("Q7", "Marks vs Portfolio", "First mark compared with Invested Capital (information only).", "Info"),
     ("F1", "Fund Summary", "Fund names unique, vintage integer, Net IRR numeric. Net IRR shown as reported and cannot be verified without cash flows.", "Info"),
     ("F2", "Fund Summary C:G", "SUMIF ranges must cover every Portfolio row.", "Warning"),
@@ -290,7 +290,7 @@ def main(path, tpl, out):
                 issue("Warning", "Q6", "Quarterly Marks", f"A{r}", nm, f"Latest valid mark is {quarters[last_i]}, not {quarters[-1]}", "Compared at latest valid mark")
             if abs(vals[last_i] - ref) > TOL:
                 issue("Warning", "Q6", "Quarterly Marks", f"{openpyxl.utils.get_column_letter(2 + last_i)}{r}", nm,
-                      f"Latest mark {vals[last_i]} vs Portfolio {lab} {ref}: difference {vals[last_i] - ref:+.1f}", "Shown on dashboard; Portfolio figure used for headlines")
+                      f"Latest mark {vals[last_i]} vs Portfolio {lab} {ref}: difference {vals[last_i] - ref:+.1f}", "Portfolio tab confirmed as correct by Jeremie; mark difference shown for reference only")
         marks[p["company"]] = vals
         p["marks"] = vals
     for p in rows:
